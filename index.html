@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Avanzada de Raíces</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1f77b4;
+            --secondary-color: #f0f2f6;
+            --accent-color: #667eea;
+            --text-color: #262730;
+            --border-color: #dee2e6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--text-color);
+        }
+        
+        .main-header {
+            text-align: center;
+            color: var(--primary-color);
+            margin: 2rem 0;
+            font-size: 2.5rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .app-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .equation-display {
+            background-color: #f8f9fa;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            min-height: 60px;
+            margin-bottom: 15px;
+            word-break: break-all;
+        }
+        
+        .keyboard-section {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .keyboard-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .calc-btn {
+            padding: 12px 8px;
+            border: 1px solid var(--border-color);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .calc-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .calc-btn:active {
+            transform: translateY(0);
+        }
+        
+        .root-detection {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: var(--secondary-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .iteration-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .iteration-table th,
+        .iteration-table td {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .iteration-table th {
+            background: var(--secondary-color);
+        }
+        
+        .plot-container {
+            width: 100%;
+            height: 500px;
+            margin: 20px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #155a8a;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .example-btn {
+            padding: 10px;
+            background: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .example-btn:hover {
+            background: #e2e6ea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="main-header">🔍 Calculadora Avanzada de Raíces</h1>
+        
+        <div class="app-layout">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <h3>⚙️ Configuración</h3>
+                
+                <div class="form-group">
+                    <label>Método de Resolución:</label>
+                    <select id="methodSelect" class="form-control">
+                        <option value="bisection">Bisección</option>
+                        <option value="newton">Newton-Raphson</option>
+                        <option value="secant">Secante</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tolerancia:</label>
+                    <input type="number" id="tolerance" class="form-control" value="0.000001" step="0.000001">
+                </div>
+                
+                <div class="form-group">
+                    <label>Máximo de iteraciones:</label>
+                    <input type="range" id="maxIterations" class="form-control" min="10" max="100" value="50">
+                    <span id="iterationsValue">50</span>
+                </div>
+                
+                <div class="form-group">
+                    <label>Límite inferior (x_min):</label>
+                    <input type="number" id="xMin" class="form-control" value="-10" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Límite superior (x_max):</label>
+                    <input type="number" id="xMax" class="form-control" value="10" step="0.1">
+                </div>
+                
+                <h4>Parámetros del Método</h4>
+                <div id="methodParams">
+                    <!-- Se llena dinámicamente según el método -->
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('input')">🎮 Ingresar Ecuación</button>
+                    <button class="tab" onclick="switchTab('detection')">🔍 Detectar Raíces</button>
+                    <button class="tab" onclick="switchTab('results')">📊 Resultados</button>
+                </div>
+                
+                <!-- Tab 1: Input -->
+                <div id="input" class="tab-content active">
+                    <h3>Calculadora de Ecuaciones</h3>
+                    
+                    <div class="equation-display" id="equationDisplay">x^3 - e^(0.8*x) - 20</div>
+                    
+                    <div class="keyboard-section">
+                        <!-- Fila 1: Variables y funciones -->
+                        <div class="keyboard-row">
+                            <button class="calc-btn" onclick="addToEquation('x')">x</button>
+                            <button class="calc-btn" onclick="addToEquation('x^2')">x²</button>
+                            <button class="calc-btn" onclick="addToEquation('x^3')">x³</button>
+                            <button class="calc-btn" onclick="addToEquation('sqrt(x)')">√x</button>
+                            <button class="calc-btn" onclick="addToEquation('sin(x)')">sin(x)</button>
+                        </div>
+                        
+                        <!-- Fila 2: Más funciones -->
+                        <div class="keyboard-row">
+                            <button class="calc-btn" onclick="addToEquation('cos(x)')">cos(x)</button>
+                            <button class="calc-btn" onclick="addToEquation('tan(x)')">tan(x)</button>
+                            <button class="calc-btn" onclick="addToEquation('log(x)')">log(x)</button>
+                            <button class="calc-btn" onclick="addToEquation('e^x')">e^x</button>
+                            <button class="calc-btn" onclick="addToEquation('pi')">π</button>
+                        </div>
+                        
+                        <!-- Fila 3: Operadores -->
+                        <div class="keyboard-row">
+                            <button class="calc-btn" onclick="addToEquation('+')">+</button>
+                            <button class="calc-btn" onclick="addToEquation('-')">-</button>
+                            <button class="calc-btn" onclick="addToEquation('*')">×</button>
+                            <button class="calc-btn" onclick="addToEquation('/')">÷</button>
+                            <button class="calc-btn" onclick="addToEquation('^')">^</button>
+                        </div>
+                        
+                        <!-- Fila 4: Paréntesis y controles -->
+                        <div class="keyboard-row">
+                            <button class="calc-btn" onclick="addToEquation('(')">(</button>
+                            <button class="calc-btn" onclick="addToEquation(')')">)</button>
+                            <button class="calc-btn" onclick="addToEquation('.')">.</button>
+                            <button class="calc-btn" onclick="backspace()">⌫ Borrar</button>
+                            <button class="calc-btn" onclick="clearEquation()">🔄 Limpiar</button>
+                        </div>
+                        
+                        <!-- Fila 5: Números -->
+                        <div class="keyboard-row">
+                            <button class="calc-btn" onclick="addToEquation('7')">7</button>
+                            <button class="calc-btn" onclick="addToEquation('8')">8</button>
+                            <button class="calc-btn" onclick="addToEquation('9')">9</button>
+                            <button class="calc-btn" onclick="addToEquation('4')">4</button>
+                            <button class="calc-btn" onclick="addToEquation('5')">5</button>
+                        </div>
+                        
+                        <div class="keyboard-row">
+                            <button class="calc-btn" onclick="addToEquation('6')">6</button>
+                            <button class="calc-btn" onclick="addToEquation('1')">1</button>
+                            <button class="calc-btn" onclick="addToEquation('2')">2</button>
+                            <button class="calc-btn" onclick="addToEquation('3')">3</button>
+                            <button class="calc-btn" onclick="addToEquation('0')">0</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔧 Editar ecuación manualmente:</label>
+                        <input type="text" id="equationInput" class="form-control" value="x^3 - e^(0.8*x) - 20" 
+                               onchange="updateEquationFromInput()">
+                    </div>
+                    
+                    <h4>📚 Ejemplos Rápidos</h4>
+                    <div class="examples-grid">
+                        <div class="example-btn" onclick="loadExample('x^2 - 4')">Polinómica Simple</div>
+                        <div class="example-btn" onclick="loadExample('x^3 - 2*x - 5')">Polinómica Cúbica</div>
+                        <div class="example-btn" onclick="loadExample('sin(x) - x/2')">Trigonométrica</div>
+                        <div class="example-btn" onclick="loadExample('e^x - 2*x')">Exponencial</div>
+                        <div class="example-btn" onclick="loadExample('log(x+1) - 1')">Logarítmica</div>
+                        <div class="example-btn" onclick="loadExample('x^3 - e^(0.8*x) - 20')">Mixta Compleja</div>
+                    </div>
+                </div>
+                
+                <!-- Tab 2: Detection -->
+                <div id="detection" class="tab-content">
+                    <h3>🔍 Detección Automática de Raíces</h3>
+                    <button class="btn btn-primary" onclick="detectRoots()">Buscar Raíces</button>
+                    
+                    <div id="detectionResults">
+                        <!-- Resultados de detección se muestran aquí -->
+                    </div>
+                    
+                    <div class="plot-container" id="detectionPlot"></div>
+                </div>
+                
+                <!-- Tab 3: Results -->
+                <div id="results" class="tab-content">
+                    <h3>📊 Cálculo y Resultados</h3>
+                    <button class="btn btn-primary" onclick="calculateRoot()">🚀 Calcular Raíz</button>
+                    
+                    <div id="calculationResults">
+                        <!-- Resultados del cálculo se muestran aquí -->
+                    </div>
+                    
+                    <div class="plot-container" id="resultsPlot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado de la aplicación
+        const appState = {
+            equation: "x^3 - e^(0.8*x) - 20",
+            detectedRoots: [],
+            calculationResult: null
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMethodParams();
+            document.getElementById('maxIterations').addEventListener('input', function() {
+                document.getElementById('iterationsValue').textContent = this.value;
+            });
+        });
+
+        // Funciones de la interfaz
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function addToEquation(value) {
+            appState.equation += value;
+            updateEquationDisplay();
+        }
+
+        function backspace() {
+            appState.equation = appState.equation.slice(0, -1);
+            updateEquationDisplay();
+        }
+
+        function clearEquation() {
+            appState.equation = "";
+            updateEquationDisplay();
+        }
+
+        function updateEquationFromInput() {
+            appState.equation = document.getElementById('equationInput').value;
+            updateEquationDisplay();
+        }
+
+        function updateEquationDisplay() {
+            document.getElementById('equationDisplay').textContent = appState.equation;
+            document.getElementById('equationInput').value = appState.equation;
+        }
+
+        function loadExample(equation) {
+            appState.equation = equation;
+            updateEquationDisplay();
+        }
+
+        function updateMethodParams() {
+            const method = document.getElementById('methodSelect').value;
+            let html = '';
+            
+            if (method === 'bisection') {
+                html = `
+                    <label>Extremo inferior (a):</label>
+                    <input type="number" id="paramA" class="form-control" value="3" step="0.1">
+                    <label>Extremo superior (b):</label>
+                    <input type="number" id="paramB" class="form-control" value="4" step="0.1">
+                `;
+            } else if (method === 'newton') {
+                html = `
+                    <label>Punto inicial (x₀):</label>
+                    <input type="number" id="paramX0" class="form-control" value="3.5" step="0.1">
+                `;
+            } else if (method === 'secant') {
+                html = `
+                    <label>Primer punto (x₀):</label>
+                    <input type="number" id="paramX0" class="form-control" value="3" step="0.1">
+                    <label>Segundo punto (x₁):</label>
+                    <input type="number" id="paramX1" class="form-control" value="4" step="0.1">
+                `;
+            }
+            
+            document.getElementById('methodParams').innerHTML = html;
+        }
+
+        // Funciones matemáticas
+        function evaluateFunction(equation, x) {
+            try {
+                const scope = { x: x, e: math.e, pi: math.pi };
+                return math.evaluate(equation, scope);
+            } catch (error) {
+                return NaN;
+            }
+        }
+
+        function derivative(f, x, h = 1e-5) {
+            return (f(x + h) - f(x - h)) / (2 * h);
+        }
+
+        // Métodos numéricos
+        function bisectionMethod(equation, a, b, tol, maxIter) {
+            const f = x => evaluateFunction(equation, x);
+            const iterations = [];
+            
+            if (f(a) * f(b) > 0) {
+                return { success: false, error: "No hay cambio de signo en el intervalo" };
+            }
+            
+            for (let i = 0; i < maxIter; i++) {
+                const c = (a + b) / 2;
+                const fc = f(c);
+                const error = Math.abs(b - a) / 2;
+                
+                iterations.push({
+                    iteration: i + 1,
+                    a: a,
+                    b: b,
+                    c: c,
+                    f_c: fc,
+                    error: error
+                });
+                
+                if (Math.abs(fc) < tol || error < tol) {
+                    return { success: true, root: c, iterations: iterations, message: "Convergencia exitosa" };
+                }
+                
+                if (f(a) * fc < 0) {
+                    b = c;
+                } else {
+                    a = c;
+                }
+            }
+            
+            const finalRoot = (a + b) / 2;
+            return { 
+                success: true, 
+                root: finalRoot, 
+                iterations: iterations, 
+                message: "Convergencia por máximo de iteraciones" 
+            };
+        }
+
+        function newtonMethod(equation, x0, tol, maxIter) {
+            const f = x => evaluateFunction(equation, x);
+            const iterations = [];
+            let x = x0;
+            
+            for (let i = 0; i < maxIter; i++) {
+                const fx = f(x);
+                const dfx = derivative(f, x);
+                
+                if (Math.abs(dfx) < 1e-12) {
+                    return { success: false, error: "Derivada cercana a cero" };
+                }
+                
+                const xNew = x - fx / dfx;
+                const error = Math.abs(xNew - x);
+                
+                iterations.push({
+                    iteration: i + 1,
+                    x: x,
+                    f_x: fx,
+                    df_x: dfx,
+                    x_new: xNew,
+                    error: error
+                });
+                
+                if (Math.abs(fx) < tol || error < tol) {
+                    return { success: true, root: xNew, iterations: iterations, message: "Convergencia exitosa" };
+                }
+                
+                x = xNew;
+            }
+            
+            return { 
+                success: true, 
+                root: x, 
+                iterations: iterations, 
+                message: "Convergencia por máximo de iteraciones" 
+            };
+        }
+
+        function secantMethod(equation, x0, x1, tol, maxIter) {
+            const f = x => evaluateFunction(equation, x);
+            const iterations = [];
+            let xPrev = x0;
+            let xCurr = x1;
+            
+            for (let i = 0; i < maxIter; i++) {
+                const fPrev = f(xPrev);
+                const fCurr = f(xCurr);
+                
+                if (Math.abs(fCurr - fPrev) < 1e-12) {
+                    return { success: false, error: "División por cero" };
+                }
+                
+                const xNext = xCurr - fCurr * (xCurr - xPrev) / (fCurr - fPrev);
+                const error = Math.abs(xNext - xCurr);
+                
+                iterations.push({
+                    iteration: i + 1,
+                    x0: xPrev,
+                    x1: xCurr,
+                    f_x0: fPrev,
+                    f_x1: fCurr,
+                    x2: xNext,
+                    error: error
+                });
+                
+                if (Math.abs(fCurr) < tol || error < tol) {
+                    return { success: true, root: xNext, iterations: iterations, message: "Convergencia exitosa" };
+                }
+                
+                xPrev = xCurr;
+                xCurr = xNext;
+            }
+            
+            return { 
+                success: true, 
+                root: xCurr, 
+                iterations: iterations, 
+                message: "Convergencia por máximo de iteraciones" 
+            };
+        }
+
+        // Detección de raíces
+        function detectRoots() {
+            const equation = appState.equation;
+            const xMin = parseFloat(document.getElementById('xMin').value);
+            const xMax = parseFloat(document.getElementById('xMax').value);
+            const numPoints = 1000;
+            
+            const f = x => evaluateFunction(equation, x);
+            const xValues = [];
+            const yValues = [];
+            const roots = [];
+            
+            // Evaluar la función
+            for (let i = 0; i <= numPoints; i++) {
+                const x = xMin + (xMax - xMin) * i / numPoints;
+                const y = f(x);
+                xValues.push(x);
+                yValues.push(y);
+                
+                // Detectar cambios de signo
+                if (i > 0 && yValues[i-1] * y <= 0) {
+                    const rootApprox = (xValues[i-1] + x) / 2;
+                    if (Math.abs(yValues[i-1] - y) < 1e6) { // Evitar discontinuidades
+                        roots.push({
+                            interval: [xValues[i-1], x],
+                            approximate: rootApprox
+                        });
+                    }
+                }
+            }
+            
+            appState.detectedRoots = roots;
+            displayDetectionResults(roots);
+            plotDetection(xValues, yValues, roots);
+        }
+
+        function displayDetectionResults(roots) {
+            let html = '';
+            
+            if (roots.length > 0) {
+                html += `<div class="alert alert-success">
+                    ✅ Se encontraron ${roots.length} raíz(es) potencial(es)
+                </div>`;
+                
+                roots.forEach((root, index) => {
+                    html += `
+                        <div class="root-detection">
+                            <div style="display: grid; grid-template-columns: 2fr 2fr 1fr; gap: 15px; align-items: center;">
+                                <div>
+                                    <strong>Intervalo ${index + 1}:</strong> 
+                                    [${root.interval[0].toFixed(3)}, ${root.interval[1].toFixed(3)}]
+                                </div>
+                                <div>
+                                    <strong>Raíz aproximada:</strong> ${root.approximate.toFixed(4)}
+                                </div>
+                                <div>
+                                    <button class="btn btn-success" onclick="useDetectedRoot(${index})">Usar</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = `<div class="alert alert-warning">
+                    ⚠️ No se detectaron raíces en el intervalo especificado
+                </div>`;
+            }
+            
+            document.getElementById('detectionResults').innerHTML = html;
+        }
+
+        function useDetectedRoot(index) {
+            const root = appState.detectedRoots[index];
+            const method = document.getElementById('methodSelect').value;
+            
+            if (method === 'bisection') {
+                document.getElementById('paramA').value = root.interval[0].toFixed(2);
+                document.getElementById('paramB').value = root.interval[1].toFixed(2);
+            } else if (method === 'newton') {
+                document.getElementById('paramX0').value = root.approximate.toFixed(2);
+            } else if (method === 'secant') {
+                document.getElementById('paramX0').value = root.interval[0].toFixed(2);
+                document.getElementById('paramX1').value = root.interval[1].toFixed(2);
+            }
+            
+            alert('¡Parámetros configurados! Ve a la pestaña de Resultados.');
+        }
+
+        // Cálculo de raíces
+        function calculateRoot() {
+            const equation = appState.equation;
+            const method = document.getElementById('methodSelect').value;
+            const tolerance = parseFloat(document.getElementById('tolerance').value);
+            const maxIterations = parseInt(document.getElementById('maxIterations').value);
+            
+            let result;
+            const startTime = performance.now();
+            
+            try {
+                if (method === 'bisection') {
+                    const a = parseFloat(document.getElementById('paramA').value);
+                    const b = parseFloat(document.getElementById('paramB').value);
+                    result = bisectionMethod(equation, a, b, tolerance, maxIterations);
+                } else if (method === 'newton') {
+                    const x0 = parseFloat(document.getElementById('paramX0').value);
+                    result = newtonMethod(equation, x0, tolerance, maxIterations);
+                } else if (method === 'secant') {
+                    const x0 = parseFloat(document.getElementById('paramX0').value);
+                    const x1 = parseFloat(document.getElementById('paramX1').value);
+                    result = secantMethod(equation, x0, x1, tolerance, maxIterations);
+                }
+                
+                const endTime = performance.now();
+                const executionTime = (endTime - startTime).toFixed(2);
+                
+                appState.calculationResult = { ...result, executionTime };
+                displayCalculationResults(appState.calculationResult);
+                plotFinalResult(equation, appState.calculationResult);
+                
+            } catch (error) {
+                document.getElementById('calculationResults').innerHTML = `
+                    <div class="alert alert-error">
+                        ❌ Error en el cálculo: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function displayCalculationResults(result) {
+            let html = '';
+            
+            if (result.success) {
+                html = `
+                    <div class="results-grid">
+                        <div class="metric-card">
+                            <div>Método</div>
+                            <div class="metric-value">${document.getElementById('methodSelect').selectedOptions[0].text}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div>Raíz encontrada</div>
+                            <div class="metric-value">${result.root.toFixed(8)}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div>Iteraciones</div>
+                            <div class="metric-value">${result.iterations.length}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div>Tiempo</div>
+                            <div class="metric-value">${result.executionTime}ms</div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        ✅ ${result.message}
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div>f(raíz)</div>
+                        <div class="metric-value">${evaluateFunction(appState.equation, result.root).toExponential(2)}</div>
+                    </div>
+                `;
+                
+                // Mostrar iteraciones
+                if (result.iterations.length > 0) {
+                    html += `<h4>🔄 Proceso Iterativo</h4>`;
+                    
+                    if (result.iterations.length > 10) {
+                        html += `<p>Mostrando primeras y últimas 5 iteraciones de ${result.iterations.length} totales</p>`;
+                        
+                        const firstFive = result.iterations.slice(0, 5);
+                        const lastFive = result.iterations.slice(-5);
+                        
+                        html += `<h5>Primeras iteraciones:</h5>`;
+                        html += createIterationsTable(firstFive);
+                        
+                        html += `<h5>Últimas iteraciones:</h5>`;
+                        html += createIterationsTable(lastFive);
+                    } else {
+                        html += createIterationsTable(result.iterations);
+                    }
+                }
+            } else {
+                html = `
+                    <div class="alert alert-error">
+                        ❌ ${result.error}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('calculationResults').innerHTML = html;
+        }
+
+        function createIterationsTable(iterations) {
+            if (iterations.length === 0) return '';
+            
+            const method = document.getElementById('methodSelect').value;
+            let headers = '';
+            let rows = '';
+            
+            if (method === 'bisection') {
+                headers = '<tr><th>Iter</th><th>a</th><th>b</th><th>c</th><th>f(c)</th><th>Error</th></tr>';
+                iterations.forEach(it => {
+                    rows += `<tr>
+                        <td>${it.iteration}</td>
+                        <td>${it.a.toFixed(6)}</td>
+                        <td>${it.b.toFixed(6)}</td>
+                        <td>${it.c.toFixed(6)}</td>
+                        <td>${it.f_c.toExponential(2)}</td>
+                        <td>${it.error.toExponential(2)}</td>
+                    </tr>`;
+                });
+            } else if (method === 'newton') {
+                headers = '<tr><th>Iter</th><th>x</th><th>f(x)</th><th>f\'(x)</th><th>x_nuevo</th><th>Error</th></tr>';
+                iterations.forEach(it => {
+                    rows += `<tr>
+                        <td>${it.iteration}</td>
+                        <td>${it.x.toFixed(6)}</td>
+                        <td>${it.f_x.toExponential(2)}</td>
+                        <td>${it.df_x.toExponential(2)}</td>
+                        <td>${it.x_new.toFixed(6)}</td>
+                        <td>${it.error.toExponential(2)}</td>
+                    </tr>`;
+                });
+            } else if (method === 'secant') {
+                headers = '<tr><th>Iter</th><th>x₀</th><th>x₁</th><th>f(x₀)</th><th>f(x₁)</th><th>x₂</th><th>Error</th></tr>';
+                iterations.forEach(it => {
+                    rows += `<tr>
+                        <td>${it.iteration}</td>
+                        <td>${it.x0.toFixed(6)}</td>
+                        <td>${it.x1.toFixed(6)}</td>
+                        <td>${it.f_x0.toExponential(2)}</td>
+                        <td>${it.f_x1.toExponential(2)}</td>
+                        <td>${it.x2.toFixed(6)}</td>
+                        <td>${it.error.toExponential(2)}</td>
+                    </tr>`;
+                });
+            }
+            
+            return `<table class="iteration-table">${headers}${rows}</table>`;
+        }
+
+        // Funciones de gráficas
+        function plotDetection(xValues, yValues, roots) {
+            const trace = {
+                x: xValues,
+                y: yValues,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'f(x)',
+                line: { color: '#1f77b4', width: 2 }
+            };
+            
+            const zeroLine = {
+                x: [Math.min(...xValues), Math.max(...xValues)],
+                y: [0, 0],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'y=0',
+                line: { color: 'black', width: 1, dash: 'dash' }
+            };
+            
+            const rootPoints = {
+                x: roots.map(r => r.approximate),
+                y: roots.map(r => 0),
+                type: 'scatter',
+                mode: 'markers',
+                name: 'Raíces detectadas',
+                marker: { color: 'red', size: 8 }
+            };
+            
+            const annotations = roots.map((root, index) => ({
+                x: root.approximate,
+                y: 0,
+                text: `Raíz ${index+1}<br>${root.approximate.toFixed(3)}`,
+                showarrow: true,
+                arrowhead: 2,
+                ax: 0,
+                ay: -40,
+                bgcolor: 'yellow',
+                bordercolor: 'black',
+                borderwidth: 1,
+                borderpad: 4
+            }));
+            
+            const layout = {
+                title: 'Detección Automática de Raíces',
+                xaxis: { title: 'x' },
+                yaxis: { title: 'f(x)' },
+                showlegend: true,
+                annotations: annotations
+            };
+            
+            Plotly.newPlot('detectionPlot', [trace, zeroLine, rootPoints], layout);
+        }
+
+        function plotFinalResult(equation, result) {
+            const xMin = parseFloat(document.getElementById('xMin').value);
+            const xMax = parseFloat(document.getElementById('xMax').value);
+            const numPoints = 500;
+            
+            const xValues = [];
+            const yValues = [];
+            
+            for (let i = 0; i <= numPoints; i++) {
+                const x = xMin + (xMax - xMin) * i / numPoints;
+                xValues.push(x);
+                yValues.push(evaluateFunction(equation, x));
+            }
+            
+            const trace = {
+                x: xValues,
+                y: yValues,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'f(x)',
+                line: { color: '#1f77b4', width: 2 }
+            };
+            
+            const zeroLine = {
+                x: [xMin, xMax],
+                y: [0, 0],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'y=0',
+                line: { color: 'black', width: 1, dash: 'dash' }
+            };
+            
+            const traces = [trace, zeroLine];
+            
+            if (result.success) {
+                const rootPoint = {
+                    x: [result.root],
+                    y: [evaluateFunction(equation, result.root)],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: 'Raíz encontrada',
+                    marker: { color: 'red', size: 12 }
+                };
+                
+                traces.push(rootPoint);
+                
+                // Agregar anotación para la raíz
+                const annotation = {
+                    x: result.root,
+                    y: evaluateFunction(equation, result.root),
+                    text: `Raíz: ${result.root.toFixed(4)}`,
+                    showarrow: true,
+                    arrowhead: 2,
+                    ax: 0,
+                    ay: -40,
+                    bgcolor: 'red',
+                    bordercolor: 'black',
+                    borderwidth: 1,
+                    borderpad: 4,
+                    font: { color: 'white' }
+                };
+                
+                const layout = {
+                    title: `Resultado - Método de ${document.getElementById('methodSelect').selectedOptions[0].text}`,
+                    xaxis: { title: 'x' },
+                    yaxis: { title: 'f(x)' },
+                    showlegend: true,
+                    annotations: [annotation]
+                };
+                
+                Plotly.newPlot('resultsPlot', traces, layout);
+            }
+        }
+
+        // Actualizar parámetros cuando cambia el método
+        document.getElementById('methodSelect').addEventListener('change', updateMethodParams);
+    </script>
+</body>
+</html>
